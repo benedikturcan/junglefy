@@ -1,0 +1,32 @@
+{
+  "name": "Junglefy",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "@nuxtjs/supabase": "^2.0.4",
+    "@pinia/nuxt": "^0.11.3",
+    "@vueuse/core": "^14.2.1",
+    "@vueuse/nuxt": "^14.2.1",
+    "nuxt": "^4.3.1",
+    "pinia": "^3.0.4",
+    "vue": "^3.5.28",
+    "vue-router": "^4.6.4",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@nuxt/eslint": "^1.15.1",
+    "@nuxt/icon": "^2.2.1",
+    "@nuxtjs/tailwindcss": "^6.14.0",
+    "@scalar/nuxt": "^0.5.82",
+    "eslint": "^10.0.1",
+    "typescript": "^5.9.3",
+    "vue-tsc": "^3.2.5"
+  }
+}
