@@ -317,6 +317,186 @@ export type Database = {
           },
         ]
       }
+      order_items: {
+        Row: {
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          name: string
+          order_id: string
+          organization_id: string
+          plant_catalog_id: string | null
+          product_id: string
+          quantity: number
+          sku: string
+          tax_amount: number
+          tax_rate_percent: number
+          total_price: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          name: string
+          order_id: string
+          organization_id: string
+          plant_catalog_id?: string | null
+          product_id: string
+          quantity: number
+          sku: string
+          tax_amount?: number
+          tax_rate_percent?: number
+          total_price: number
+          unit_price: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          name?: string
+          order_id?: string
+          organization_id?: string
+          plant_catalog_id?: string | null
+          product_id?: string
+          quantity?: number
+          sku?: string
+          tax_amount?: number
+          tax_rate_percent?: number
+          total_price?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_plant_catalog_id_fkey"
+            columns: ["plant_catalog_id"]
+            isOneToOne: false
+            referencedRelation: "plant_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          billing_address: Json | null
+          created_at: string | null
+          currency: string
+          customer_email: string
+          customer_name: string | null
+          customer_phone: string | null
+          discount_total: number
+          fulfillment_type: Database["public"]["Enums"]["fulfillment_type"]
+          guest_token: string | null
+          id: string
+          location_id: string | null
+          metadata: Json | null
+          notes: string | null
+          organization_id: string
+          shipping_address: Json
+          shipping_cost: number
+          shipping_method_id: string | null
+          status: Database["public"]["Enums"]["order_status"]
+          subtotal: number
+          tax_total: number
+          total: number
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          billing_address?: Json | null
+          created_at?: string | null
+          currency?: string
+          customer_email: string
+          customer_name?: string | null
+          customer_phone?: string | null
+          discount_total?: number
+          fulfillment_type?: Database["public"]["Enums"]["fulfillment_type"]
+          guest_token?: string | null
+          id?: string
+          location_id?: string | null
+          metadata?: Json | null
+          notes?: string | null
+          organization_id: string
+          shipping_address: Json
+          shipping_cost?: number
+          shipping_method_id?: string | null
+          status?: Database["public"]["Enums"]["order_status"]
+          subtotal?: number
+          tax_total?: number
+          total?: number
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          billing_address?: Json | null
+          created_at?: string | null
+          currency?: string
+          customer_email?: string
+          customer_name?: string | null
+          customer_phone?: string | null
+          discount_total?: number
+          fulfillment_type?: Database["public"]["Enums"]["fulfillment_type"]
+          guest_token?: string | null
+          id?: string
+          location_id?: string | null
+          metadata?: Json | null
+          notes?: string | null
+          organization_id?: string
+          shipping_address?: Json
+          shipping_cost?: number
+          shipping_method_id?: string | null
+          status?: Database["public"]["Enums"]["order_status"]
+          subtotal?: number
+          tax_total?: number
+          total?: number
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_shipping_method_id_fkey"
+            columns: ["shipping_method_id"]
+            isOneToOne: false
+            referencedRelation: "shipping_methods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_members: {
         Row: {
           created_at: string | null
@@ -394,6 +574,107 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      payment_providers: {
+        Row: {
+          code: string
+          config: Json | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          organization_id: string
+          sort_order: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          code: string
+          config?: Json | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          organization_id: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          code?: string
+          config?: Json | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          organization_id?: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_providers_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_transactions: {
+        Row: {
+          amount: number
+          created_at: string | null
+          currency: string
+          id: string
+          metadata: Json | null
+          order_id: string
+          organization_id: string
+          provider_code: string
+          provider_transaction_id: string | null
+          status: Database["public"]["Enums"]["payment_provider_status"]
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          currency?: string
+          id?: string
+          metadata?: Json | null
+          order_id: string
+          organization_id: string
+          provider_code: string
+          provider_transaction_id?: string | null
+          status?: Database["public"]["Enums"]["payment_provider_status"]
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          currency?: string
+          id?: string
+          metadata?: Json | null
+          order_id?: string
+          organization_id?: string
+          provider_code?: string
+          provider_transaction_id?: string | null
+          status?: Database["public"]["Enums"]["payment_provider_status"]
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_transactions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_transactions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       plant_catalog: {
         Row: {
@@ -694,6 +975,109 @@ export type Database = {
           },
         ]
       }
+      shipping_methods: {
+        Row: {
+          base_cost: number
+          created_at: string | null
+          free_threshold: number | null
+          id: string
+          is_active: boolean | null
+          name: string
+          organization_id: string
+          provider: string | null
+          sort_order: number | null
+          updated_at: string | null
+          zones: Json | null
+        }
+        Insert: {
+          base_cost?: number
+          created_at?: string | null
+          free_threshold?: number | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          organization_id: string
+          provider?: string | null
+          sort_order?: number | null
+          updated_at?: string | null
+          zones?: Json | null
+        }
+        Update: {
+          base_cost?: number
+          created_at?: string | null
+          free_threshold?: number | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          organization_id?: string
+          provider?: string | null
+          sort_order?: number | null
+          updated_at?: string | null
+          zones?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shipping_methods_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tax_rates: {
+        Row: {
+          applies_to_all: boolean | null
+          country: string | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          organization_id: string
+          priority: number | null
+          product_ids: string[] | null
+          rate_percent: number
+          region: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          applies_to_all?: boolean | null
+          country?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          organization_id: string
+          priority?: number | null
+          product_ids?: string[] | null
+          rate_percent: number
+          region?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          applies_to_all?: boolean | null
+          country?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          organization_id?: string
+          priority?: number | null
+          product_ids?: string[] | null
+          rate_percent?: number
+          region?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tax_rates_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_profiles: {
         Row: {
           avatar_url: string | null
@@ -775,7 +1159,23 @@ export type Database = {
         | "read:users"
         | "write:users"
         | "full_access"
+      fulfillment_type: "shipping" | "pickup"
       invitation_status: "pending" | "accepted" | "expired" | "revoked"
+      order_status:
+        | "pending"
+        | "confirmed"
+        | "processing"
+        | "shipped"
+        | "delivered"
+        | "cancelled"
+        | "refunded"
+      payment_provider_status:
+        | "pending"
+        | "authorized"
+        | "captured"
+        | "failed"
+        | "refunded"
+        | "cancelled"
       user_role:
         | "organization_owner"
         | "location_owner"
@@ -923,7 +1323,25 @@ export const Constants = {
         "write:users",
         "full_access",
       ],
+      fulfillment_type: ["shipping", "pickup"],
       invitation_status: ["pending", "accepted", "expired", "revoked"],
+      order_status: [
+        "pending",
+        "confirmed",
+        "processing",
+        "shipped",
+        "delivered",
+        "cancelled",
+        "refunded",
+      ],
+      payment_provider_status: [
+        "pending",
+        "authorized",
+        "captured",
+        "failed",
+        "refunded",
+        "cancelled",
+      ],
       user_role: [
         "organization_owner",
         "location_owner",

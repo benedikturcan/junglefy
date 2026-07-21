@@ -195,6 +195,38 @@ Tracks physical stock, reserved quantities, and backorder settings. The availabl
 - Backorders can be enabled per inventory record`
       },
       {
+        name: 'Orders',
+        description: `Customer orders including guest checkout support.
+
+**Authentication required:** JWT (Bearer Token) for staff, optional for guest checkout. Staff needs \`read:orders\` / \`write:orders\` or \`full_access\`.
+
+Orders are the central transaction record. They link to the Shipping, Tax and Payment modules but do not contain their business logic.`
+      },
+      {
+        name: 'Shipping',
+        description: `Shipping methods and rate calculation.
+
+**Authentication required:** Public for rate calculation; management endpoints require JWT/API Key with \`write:orders\` or \`full_access\`.
+
+Provides shipping cost calculations based on cart, destination and configured shipping methods.`
+      },
+      {
+        name: 'Taxes',
+        description: `Tax rates and tax calculation.
+
+**Authentication required:** Public for calculation; management endpoints require JWT/API Key with \`write:orders\` or \`full_access\`.
+
+Calculates taxes per cart item based on shipping address and configured tax rates.`
+      },
+      {
+        name: 'Payments',
+        description: `Payment intents, transactions and provider webhooks.
+
+**Authentication required:** JWT or guest token for payment intents. Webhooks are called by external payment providers.
+
+This module is a placeholder for Stripe, Mollie or PayPal integration. Currently it creates payment transaction records and exposes webhook endpoints to update order status.`
+      },
+      {
         name: 'Analytics',
         description: `Aggregated analytics and business intelligence data.
 
