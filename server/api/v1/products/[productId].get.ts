@@ -22,6 +22,12 @@ defineRouteMeta({
         required: false,
         schema: { type: 'boolean', default: false },
       },
+      {
+        name: 'include_images',
+        in: 'query',
+        required: false,
+        schema: { type: 'boolean', default: false },
+      },
     ],
     responses: {
       200: {
@@ -44,7 +50,30 @@ defineRouteMeta({
                     slug: { type: 'string' },
                     description: { type: 'string', nullable: true },
                     shortDescription: { type: 'string', nullable: true },
-                    images: { type: 'array' },
+                    primaryImage: {
+                      type: 'object',
+                      nullable: true,
+                      properties: {
+                        id: { type: 'string', format: 'uuid' },
+                        url: { type: 'string' },
+                        altText: { type: 'string', nullable: true },
+                        position: { type: 'integer' },
+                        isPrimary: { type: 'boolean' },
+                      },
+                    },
+                    images: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          id: { type: 'string', format: 'uuid' },
+                          url: { type: 'string' },
+                          altText: { type: 'string', nullable: true },
+                          position: { type: 'integer' },
+                          isPrimary: { type: 'boolean' },
+                        },
+                      },
+                    },
                     price: { type: 'number' },
                     comparePrice: { type: 'number', nullable: true },
                     costPrice: { type: 'number', nullable: true },
@@ -152,6 +181,8 @@ export default defineEventHandler(async (event) => {
 
   const query = getQuery(event)
   const includeInventory = query.include_inventory === 'true'
+  const includeImages = query.include_images === 'true'
+  const supabaseUrl = process.env.SUPABASE_URL || ''
 
   const { data: product, error } = await client
     .from('products')
@@ -169,6 +200,33 @@ export default defineEventHandler(async (event) => {
   }
 
   let inventorySummary: { totalAvailable: number; allowBackorder: boolean } | null = null
+  let primaryImage: { id: string; storagePath: string; altText: string | null; position: number; isPrimary: boolean } | null = null
+  const images: { id: string; storagePath: string; altText: string | null; position: number; isPrimary: boolean }[] = []
+
+  if (includeImages) {
+    const { data: productImages, error: imagesError } = await client
+      .from('product_images')
+      .select('id, storage_path, alt_text, position, is_primary')
+      .eq('organization_id', organizationId)
+      .eq('product_id', productId)
+      .order('position', { ascending: true })
+
+    if (!imagesError && productImages) {
+      for (const image of productImages) {
+        const mapped = {
+          id: image.id,
+          storagePath: image.storage_path,
+          altText: image.alt_text,
+          position: image.position,
+          isPrimary: image.is_primary,
+        }
+        images.push(mapped)
+        if (image.is_primary) {
+          primaryImage = mapped
+        }
+      }
+    }
+  }
 
   if (includeInventory) {
     let inventoryQuery = client
@@ -203,7 +261,26 @@ export default defineEventHandler(async (event) => {
       slug: product.slug,
       description: product.description,
       shortDescription: product.short_description,
-      images: product.images,
+      primaryImage: primaryImage
+        ? {
+            id: primaryImage.id,
+            url: supabaseUrl
+              ? `${supabaseUrl}/storage/v1/object/public/product-images/${primaryImage.storagePath}`
+              : null,
+            altText: primaryImage.altText,
+            position: primaryImage.position,
+            isPrimary: primaryImage.isPrimary,
+          }
+        : null,
+      images: images.map((image) => ({
+        id: image.id,
+        url: supabaseUrl
+          ? `${supabaseUrl}/storage/v1/object/public/product-images/${image.storagePath}`
+          : null,
+        altText: image.altText,
+        position: image.position,
+        isPrimary: image.isPrimary,
+      })),
       price: product.price,
       comparePrice: product.compare_price,
       costPrice: product.cost_price,

@@ -38,7 +38,6 @@ CREATE TABLE products (
   slug VARCHAR(100) NOT NULL,
   description TEXT,
   short_description TEXT,
-  images JSONB DEFAULT '[]',
   price DECIMAL(10,2) NOT NULL,
   compare_price DECIMAL(10,2),
   cost_price DECIMAL(10,2),

@@ -12,7 +12,6 @@ export const CreateProductSchema = z.object({
   slug: z.string().min(1).max(100).optional(),
   description: z.string().optional().nullable(),
   shortDescription: z.string().optional().nullable(),
-  images: z.any().default([]).optional(),
   price: z.number().positive(),
   comparePrice: z.number().positive().optional().nullable(),
   costPrice: z.number().positive().optional().nullable(),
@@ -30,6 +29,17 @@ export const UpdateProductSchema = CreateProductSchema.partial().omit({ sku: tru
 export type CreateProduct = z.infer<typeof CreateProductSchema>
 export type UpdateProduct = z.infer<typeof UpdateProductSchema>
 
+export interface ProductImageResponse {
+  id: string
+  productId: string
+  storagePath: string
+  url: string
+  altText: string | null
+  position: number
+  isPrimary: boolean
+  createdAt: string
+}
+
 export interface ProductResponse {
   id: string
   organizationId: string
@@ -40,7 +50,8 @@ export interface ProductResponse {
   slug: string
   description: string | null
   shortDescription: string | null
-  images: unknown[]
+  primaryImage: ProductImageResponse | null
+  images?: ProductImageResponse[]
   price: number
   comparePrice: number | null
   costPrice: number | null

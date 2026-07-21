@@ -1,28 +1,23 @@
 import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
-import { UpdateProductSchema } from '#server/types/products'
 import type { ApiKeyContext } from '#server/types/api-keys'
-
-function generateSlug(input: string): string {
-  return input
-    .toLowerCase()
-    .trim()
-    .replace(/[\s_]+/g, '-')
-    .replace(/[^\w-]+/g, '')
-    .replace(/--+/g, '-')
-    .substring(0, 100)
-}
 
 defineRouteMeta({
   openAPI: {
     tags: ['Products'],
-    summary: 'Update product',
+    summary: 'Update product image',
     description:
-      'Updates an existing product. SKU cannot be changed.\n\n' +
+      'Updates image metadata such as alt text, position, or primary flag. Only one image per product can be primary.\n\n' +
       '**Authorization:** JWT Bearer Token or API Key with `write:products` or `full_access`.',
     security: [{ bearerAuth: [] }, { apiKey: [] }],
     parameters: [
       {
         name: 'productId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string', format: 'uuid' },
+      },
+      {
+        name: 'imageId',
         in: 'path',
         required: true,
         schema: { type: 'string', format: 'uuid' },
@@ -35,33 +30,20 @@ defineRouteMeta({
           schema: {
             type: 'object',
             properties: {
-              categoryId: { type: 'string', format: 'uuid', nullable: true },
-              plantCatalogId: { type: 'string', format: 'uuid', nullable: true },
-              name: { type: 'string' },
-              slug: { type: 'string' },
-              description: { type: 'string', nullable: true },
-              shortDescription: { type: 'string', nullable: true },
-              price: { type: 'number' },
-              comparePrice: { type: 'number', nullable: true },
-              costPrice: { type: 'number', nullable: true },
-              trackInventory: { type: 'boolean' },
-              weight: { type: 'number', nullable: true },
-              dimensions: { type: 'object' },
-              tags: { type: 'array' },
-              metadata: { type: 'object' },
-              status: { type: 'string', enum: ['draft', 'active', 'archived'] },
-              isActive: { type: 'boolean' },
+              altText: { type: 'string', nullable: true },
+              position: { type: 'integer' },
+              isPrimary: { type: 'boolean' },
             },
           },
         },
       },
     },
     responses: {
-      200: { description: 'Product updated' },
+      200: { description: 'Image updated' },
       400: { description: 'Bad request' },
       401: { description: 'Unauthorized' },
       403: { description: 'Forbidden' },
-      404: { description: 'Product not found' },
+      404: { description: 'Image not found' },
     },
   },
 })
@@ -79,27 +61,28 @@ export default defineEventHandler(async (event) => {
   }
 
   const productId = getRouterParam(event, 'productId')
-  if (!productId) {
+  const imageId = getRouterParam(event, 'imageId')
+  if (!productId || !imageId) {
     throw createError({
       statusCode: 400,
       statusMessage: 'Bad Request',
-      message: 'Product ID is required.',
+      message: 'Product ID and image ID are required.',
     })
   }
 
   const body = await readBody(event)
-  const result = UpdateProductSchema.safeParse(body)
+  const altText = body.altText !== undefined ? (body.altText as string | null) : undefined
+  const position = body.position !== undefined ? parseInt(body.position as string, 10) : undefined
+  const isPrimary = body.isPrimary !== undefined ? Boolean(body.isPrimary) : undefined
 
-  if (!result.success) {
+  if (position !== undefined && Number.isNaN(position)) {
     throw createError({
       statusCode: 400,
       statusMessage: 'Bad Request',
-      message: 'Invalid request body.',
-      data: result.error.flatten(),
+      message: 'Position must be a number.',
     })
   }
 
-  const data = result.data
   const client = await serverSupabaseClient(event)
   let organizationId: string
 
@@ -149,9 +132,10 @@ export default defineEventHandler(async (event) => {
   }
 
   const { data: existing, error: existingError } = await client
-    .from('products')
+    .from('product_images')
     .select('id')
-    .eq('id', productId)
+    .eq('id', imageId)
+    .eq('product_id', productId)
     .eq('organization_id', organizationId)
     .single()
 
@@ -159,30 +143,23 @@ export default defineEventHandler(async (event) => {
     throw createError({
       statusCode: 404,
       statusMessage: 'Not Found',
-      message: 'Product not found.',
+      message: 'Image not found.',
     })
   }
 
-  const updateData: Record<string, unknown> = {}
-  if (data.categoryId !== undefined) updateData.category_id = data.categoryId
-  if (data.plantCatalogId !== undefined) updateData.plant_catalog_id = data.plantCatalogId
-  if (data.name !== undefined) {
-    updateData.name = data.name
-    if (!data.slug) updateData.slug = generateSlug(data.name)
+  if (isPrimary === true) {
+    await client
+      .from('product_images')
+      .update({ is_primary: false })
+      .eq('organization_id', organizationId)
+      .eq('product_id', productId)
+      .eq('is_primary', true)
   }
-  if (data.slug !== undefined) updateData.slug = data.slug
-  if (data.description !== undefined) updateData.description = data.description
-  if (data.shortDescription !== undefined) updateData.short_description = data.shortDescription
-  if (data.price !== undefined) updateData.price = data.price
-  if (data.comparePrice !== undefined) updateData.compare_price = data.comparePrice
-  if (data.costPrice !== undefined) updateData.cost_price = data.costPrice
-  if (data.trackInventory !== undefined) updateData.track_inventory = data.trackInventory
-  if (data.weight !== undefined) updateData.weight = data.weight
-  if (data.dimensions !== undefined) updateData.dimensions = data.dimensions
-  if (data.tags !== undefined) updateData.tags = data.tags
-  if (data.metadata !== undefined) updateData.metadata = data.metadata
-  if (data.status !== undefined) updateData.status = data.status
-  if (data.isActive !== undefined) updateData.is_active = data.isActive
+
+  const updateData: Record<string, unknown> = {}
+  if (altText !== undefined) updateData.alt_text = altText
+  if (position !== undefined) updateData.position = position
+  if (isPrimary !== undefined) updateData.is_primary = isPrimary
 
   if (Object.keys(updateData).length === 0) {
     throw createError({
@@ -192,30 +169,36 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const { data: product, error } = await client
-    .from('products')
+  const { data: image, error } = await client
+    .from('product_images')
     .update(updateData)
-    .eq('id', productId)
-    .select('id, sku, name, slug, status, is_active')
+    .eq('id', imageId)
+    .eq('organization_id', organizationId)
+    .select('id, storage_path, alt_text, position, is_primary, created_at')
     .single()
 
-  if (error) {
-    if (error.code === '23505') {
-      throw createError({
-        statusCode: 409,
-        statusMessage: 'Conflict',
-        message: 'Slug already exists in this organization.',
-      })
-    }
+  if (error || !image) {
     throw createError({
       statusCode: 500,
       statusMessage: 'Internal Server Error',
-      message: 'Failed to update product.',
+      message: 'Failed to update image.',
     })
   }
 
+  const supabaseUrl = process.env.SUPABASE_URL || ''
+
   return {
     success: true,
-    data: product,
+    data: {
+      id: image.id,
+      url: supabaseUrl
+        ? `${supabaseUrl}/storage/v1/object/public/product-images/${image.storage_path}`
+        : null,
+      storagePath: image.storage_path,
+      altText: image.alt_text,
+      position: image.position,
+      isPrimary: image.is_primary,
+      createdAt: image.created_at,
+    },
   }
 })

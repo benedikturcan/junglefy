@@ -67,7 +67,17 @@ defineRouteMeta({
                       slug: { type: 'string' },
                       description: { type: 'string', nullable: true },
                       shortDescription: { type: 'string', nullable: true },
-                      images: { type: 'array' },
+                      primaryImage: {
+                        type: 'object',
+                        nullable: true,
+                        properties: {
+                          id: { type: 'string', format: 'uuid' },
+                          url: { type: 'string' },
+                          altText: { type: 'string', nullable: true },
+                          position: { type: 'integer' },
+                          isPrimary: { type: 'boolean' },
+                        },
+                      },
                       price: { type: 'number' },
                       comparePrice: { type: 'number', nullable: true },
                       costPrice: { type: 'number', nullable: true },
@@ -166,6 +176,7 @@ export default defineEventHandler(async (event) => {
 
   const query = getQuery(event)
   const includeInventory = query.include_inventory === 'true'
+  const supabaseUrl = process.env.SUPABASE_URL || ''
 
   let dbQuery = client
     .from('products')
@@ -198,6 +209,29 @@ export default defineEventHandler(async (event) => {
   }
 
   const inventoryMap: Map<string, { totalAvailable: number; allowBackorder: boolean }> = new Map()
+  const primaryImageMap: Map<string, { id: string; storagePath: string; altText: string | null; position: number; isPrimary: boolean }> = new Map()
+
+  if (products && products.length > 0) {
+    const productIds = products.map((p) => p.id)
+    const { data: images, error: imagesError } = await client
+      .from('product_images')
+      .select('id, product_id, storage_path, alt_text, position, is_primary')
+      .eq('organization_id', organizationId)
+      .eq('is_primary', true)
+      .in('product_id', productIds)
+
+    if (!imagesError && images) {
+      for (const image of images) {
+        primaryImageMap.set(image.product_id, {
+          id: image.id,
+          storagePath: image.storage_path,
+          altText: image.alt_text,
+          position: image.position,
+          isPrimary: image.is_primary,
+        })
+      }
+    }
+  }
 
   if (includeInventory && products && products.length > 0) {
     const productIds = products.map((p) => p.id)
@@ -226,6 +260,7 @@ export default defineEventHandler(async (event) => {
 
   const transformed = products?.map((product) => {
     const inventory = includeInventory ? inventoryMap.get(product.id) : null
+    const primaryImage = primaryImageMap.get(product.id)
     return {
       id: product.id,
       organizationId: product.organization_id,
@@ -236,7 +271,17 @@ export default defineEventHandler(async (event) => {
       slug: product.slug,
       description: product.description,
       shortDescription: product.short_description,
-      images: product.images,
+      primaryImage: primaryImage
+        ? {
+            id: primaryImage.id,
+            url: supabaseUrl
+              ? `${supabaseUrl}/storage/v1/object/public/product-images/${primaryImage.storagePath}`
+              : null,
+            altText: primaryImage.altText,
+            position: primaryImage.position,
+            isPrimary: primaryImage.isPrimary,
+          }
+        : null,
       price: product.price,
       comparePrice: product.compare_price,
       costPrice: product.cost_price,
