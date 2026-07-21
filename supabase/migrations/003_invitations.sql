@@ -18,7 +18,7 @@ CREATE TYPE invitation_status AS ENUM (
 -- ============================================
 
 CREATE TABLE invitations (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
   location_id UUID REFERENCES locations(id) ON DELETE SET NULL,
   email VARCHAR(255) NOT NULL,

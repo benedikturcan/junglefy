@@ -7,7 +7,7 @@
 -- ============================================
 
 CREATE TABLE organizations (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name VARCHAR(255) NOT NULL,
   slug VARCHAR(100) UNIQUE NOT NULL,
   logo_url TEXT,
@@ -25,7 +25,7 @@ CREATE INDEX idx_organizations_active ON organizations(is_active) WHERE is_activ
 -- ============================================
 
 CREATE TABLE locations (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
   name VARCHAR(255) NOT NULL,
   slug VARCHAR(100) NOT NULL,
@@ -47,24 +47,6 @@ CREATE INDEX idx_locations_slug ON locations(organization_id, slug);
 
 ALTER TABLE organizations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE locations ENABLE ROW LEVEL SECURITY;
-
--- Organizations: Users can only see orgs they belong to
-CREATE POLICY "organizations_select" ON organizations
-  FOR SELECT USING (
-    id IN (
-      SELECT organization_id FROM organization_members 
-      WHERE user_id = auth.uid()
-    )
-  );
-
--- Locations: Users can only see locations in their orgs
-CREATE POLICY "locations_select" ON locations
-  FOR SELECT USING (
-    organization_id IN (
-      SELECT organization_id FROM organization_members 
-      WHERE user_id = auth.uid()
-    )
-  );
 
 -- ============================================
 -- TRIGGERS

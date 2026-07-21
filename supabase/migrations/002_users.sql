@@ -35,7 +35,7 @@ CREATE INDEX idx_user_profiles_email ON user_profiles(email);
 -- ============================================
 
 CREATE TABLE organization_members (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   location_id UUID REFERENCES locations(id) ON DELETE SET NULL,
@@ -136,6 +136,28 @@ CREATE POLICY "org_members_update" ON organization_members
 CREATE POLICY "org_members_delete" ON organization_members
   FOR DELETE USING (
     is_organization_owner(organization_id)
+  );
+
+-- ============================================
+-- CROSS-TABLE RLS POLICIES
+-- ============================================
+
+-- Organizations: Users can only see orgs they belong to
+CREATE POLICY "organizations_select" ON organizations
+  FOR SELECT USING (
+    id IN (
+      SELECT organization_id FROM organization_members 
+      WHERE user_id = auth.uid()
+    )
+  );
+
+-- Locations: Users can only see locations in their orgs
+CREATE POLICY "locations_select" ON locations
+  FOR SELECT USING (
+    organization_id IN (
+      SELECT organization_id FROM organization_members 
+      WHERE user_id = auth.uid()
+    )
   );
 
 -- ============================================

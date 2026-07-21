@@ -7,7 +7,7 @@
 -- ============================================
 
 CREATE TABLE plant_catalog (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   botanical_name VARCHAR(255) NOT NULL UNIQUE,
   common_names JSONB DEFAULT '[]',
   species VARCHAR(255),

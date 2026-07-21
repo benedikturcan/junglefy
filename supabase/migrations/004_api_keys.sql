@@ -34,7 +34,7 @@ CREATE TYPE api_key_permission AS ENUM (
 -- ============================================
 
 CREATE TABLE api_keys (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
   name VARCHAR(255) NOT NULL,
   description TEXT,
@@ -66,7 +66,7 @@ CREATE INDEX idx_api_keys_active ON api_keys(is_active) WHERE is_active = true;
 -- ============================================
 
 CREATE TABLE api_key_usage_log (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   api_key_id UUID NOT NULL REFERENCES api_keys(id) ON DELETE CASCADE,
   endpoint VARCHAR(255) NOT NULL,
   method VARCHAR(10) NOT NULL,
