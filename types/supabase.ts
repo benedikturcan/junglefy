@@ -213,6 +213,204 @@ export type Database = {
           },
         ]
       }
+      integration_jobs: {
+        Row: {
+          attempts: number | null
+          created_at: string | null
+          event_type: string
+          id: string
+          integration_id: string
+          last_error: string | null
+          max_attempts: number | null
+          next_run_at: string | null
+          organization_id: string
+          payload: Json
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          attempts?: number | null
+          created_at?: string | null
+          event_type: string
+          id?: string
+          integration_id: string
+          last_error?: string | null
+          max_attempts?: number | null
+          next_run_at?: string | null
+          organization_id: string
+          payload: Json
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          attempts?: number | null
+          created_at?: string | null
+          event_type?: string
+          id?: string
+          integration_id?: string
+          last_error?: string | null
+          max_attempts?: number | null
+          next_run_at?: string | null
+          organization_id?: string
+          payload?: Json
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integration_jobs_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integration_jobs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      integration_providers: {
+        Row: {
+          auth_type: string
+          capabilities: Json
+          code: string
+          config_schema: Json
+          created_at: string | null
+          description: string | null
+          is_active: boolean | null
+          name: string
+        }
+        Insert: {
+          auth_type: string
+          capabilities?: Json
+          code: string
+          config_schema?: Json
+          created_at?: string | null
+          description?: string | null
+          is_active?: boolean | null
+          name: string
+        }
+        Update: {
+          auth_type?: string
+          capabilities?: Json
+          code?: string
+          config_schema?: Json
+          created_at?: string | null
+          description?: string | null
+          is_active?: boolean | null
+          name?: string
+        }
+        Relationships: []
+      }
+      integration_webhook_logs: {
+        Row: {
+          created_at: string | null
+          headers: Json
+          id: string
+          integration_id: string | null
+          organization_id: string
+          payload: Json
+          provider_code: string
+          signature_valid: boolean | null
+        }
+        Insert: {
+          created_at?: string | null
+          headers?: Json
+          id?: string
+          integration_id?: string | null
+          organization_id: string
+          payload: Json
+          provider_code: string
+          signature_valid?: boolean | null
+        }
+        Update: {
+          created_at?: string | null
+          headers?: Json
+          id?: string
+          integration_id?: string | null
+          organization_id?: string
+          payload?: Json
+          provider_code?: string
+          signature_valid?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integration_webhook_logs_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integration_webhook_logs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      integrations: {
+        Row: {
+          config: Json
+          created_at: string | null
+          encrypted_credentials: string | null
+          error_message: string | null
+          id: string
+          last_used_at: string | null
+          organization_id: string
+          provider_code: string
+          scopes_granted: Json
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          config?: Json
+          created_at?: string | null
+          encrypted_credentials?: string | null
+          error_message?: string | null
+          id?: string
+          last_used_at?: string | null
+          organization_id: string
+          provider_code: string
+          scopes_granted?: Json
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          config?: Json
+          created_at?: string | null
+          encrypted_credentials?: string | null
+          error_message?: string | null
+          id?: string
+          last_used_at?: string | null
+          organization_id?: string
+          provider_code?: string
+          scopes_granted?: Json
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integrations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integrations_provider_code_fkey"
+            columns: ["provider_code"]
+            isOneToOne: false
+            referencedRelation: "integration_providers"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
       invitations: {
         Row: {
           accepted_at: string | null
