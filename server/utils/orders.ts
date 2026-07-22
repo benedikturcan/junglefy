@@ -41,6 +41,7 @@ interface ProductRow {
   sku: string
   name: string
   plant_catalog_id: string | null
+  category_id: string | null
   price: string | number
 }
 
@@ -49,7 +50,8 @@ interface TaxRateRow {
   country: string | null
   region: string | null
   applies_to_all: boolean
-  product_ids: string[] | null
+  product_id: string | null
+  category_id: string | null
   priority: number
 }
 
@@ -112,7 +114,7 @@ export async function calculateOrderTotals(
   // Fetch active tax rates for organization
   const { data: taxRates, error: taxError } = await client
     .from('tax_rates')
-    .select('rate_percent, country, region, applies_to_all, product_ids, priority')
+    .select('rate_percent, country, region, applies_to_all, product_id, category_id, priority')
     .eq('organization_id', organizationId)
     .eq('is_active', true)
 
@@ -121,16 +123,34 @@ export async function calculateOrderTotals(
     const region = (shippingAddress.region || '').toLowerCase()
 
     for (const item of calculatedItems) {
+      const product = productMap.get(item.productId)
+      const itemCategoryId = product?.category_id ?? null
+
       const matching = (taxRates as TaxRateRow[])
         .filter((rate: TaxRateRow) => {
           const rateCountry = (rate.country || '').toUpperCase()
           const rateRegion = (rate.region || '').toLowerCase()
           const countryMatch = !rate.country || rateCountry === country
           const regionMatch = !rate.region || rateRegion === region
-          const productMatch = rate.applies_to_all || (rate.product_ids || []).includes(item.productId)
-          return countryMatch && regionMatch && productMatch
+
+          const scopeMatch =
+            rate.applies_to_all ||
+            rate.product_id === item.productId ||
+            (rate.category_id && rate.category_id === itemCategoryId)
+
+          return countryMatch && regionMatch && scopeMatch
         })
-        .sort((a: TaxRateRow, b: TaxRateRow) => (b.priority || 0) - (a.priority || 0))
+        .sort((a: TaxRateRow, b: TaxRateRow) => {
+          const priorityDiff = (b.priority || 0) - (a.priority || 0)
+          if (priorityDiff !== 0) return priorityDiff
+          // Most specific scope wins when priority is equal
+          const scopeRank = (rate: TaxRateRow): number => {
+            if (rate.product_id) return 3
+            if (rate.category_id) return 2
+            return 1
+          }
+          return scopeRank(b) - scopeRank(a)
+        })
 
       const bestRate = matching[0]
       if (bestRate) {

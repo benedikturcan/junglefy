@@ -88,7 +88,8 @@ export default defineEventHandler(async (event) => {
       country: data.country,
       region: data.region,
       applies_to_all: data.appliesToAll,
-      product_ids: data.productIds,
+      product_id: data.productId,
+      category_id: data.categoryId,
       is_active: data.isActive,
       priority: data.priority,
     })

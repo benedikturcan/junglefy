@@ -58,7 +58,8 @@ interface TaxRateRow {
   country: string | null
   region: string | null
   applies_to_all: boolean
-  product_ids: string[] | null
+  product_id: string | null
+  category_id: string | null
   priority: number
 }
 
@@ -88,7 +89,7 @@ export default defineEventHandler(async (event) => {
 
   const { data: products, error: productsError } = await client
     .from('products')
-    .select('id, organization_id, is_active')
+    .select('id, organization_id, category_id, is_active')
     .in('id', productIds)
 
   if (productsError || !products || products.length !== productIds.length) {
@@ -99,7 +100,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const productRows = products as { id: string; organization_id: string; is_active: boolean }[]
+  const productRows = products as { id: string; organization_id: string; category_id: string | null; is_active: boolean }[]
   const orgSet = new Set(productRows.map((p) => p.organization_id))
   if (orgSet.size !== 1) {
     throw createError({
@@ -115,7 +116,7 @@ export default defineEventHandler(async (event) => {
 
   const { data: taxRates, error: taxError } = await client
     .from('tax_rates')
-    .select('id, name, rate_percent, country, region, applies_to_all, product_ids, priority')
+    .select('id, name, rate_percent, country, region, applies_to_all, product_id, category_id, priority')
     .eq('organization_id', organizationId)
     .eq('is_active', true)
 
@@ -131,15 +132,30 @@ export default defineEventHandler(async (event) => {
   const lines: TaxLine[] = []
 
   for (const item of items) {
+    const product = productRows.find((p) => p.id === item.productId)
+    const itemCategoryId = product?.category_id ?? null
     const taxableAmount = roundMoney(item.unitPrice * item.quantity)
+
     const matching = rates
       .filter((rate) => {
         const countryMatch = !rate.country || rate.country.toUpperCase() === country
         const regionMatch = !rate.region || rate.region.toLowerCase() === region
-        const productMatch = rate.applies_to_all || (rate.product_ids || []).includes(item.productId)
-        return countryMatch && regionMatch && productMatch
+        const scopeMatch =
+          rate.applies_to_all ||
+          rate.product_id === item.productId ||
+          (rate.category_id && rate.category_id === itemCategoryId)
+        return countryMatch && regionMatch && scopeMatch
       })
-      .sort((a, b) => (b.priority || 0) - (a.priority || 0))
+      .sort((a, b) => {
+        const priorityDiff = (b.priority || 0) - (a.priority || 0)
+        if (priorityDiff !== 0) return priorityDiff
+        const scopeRank = (rate: TaxRateRow): number => {
+          if (rate.product_id) return 3
+          if (rate.category_id) return 2
+          return 1
+        }
+        return scopeRank(b) - scopeRank(a)
+      })
 
     const bestRate = matching[0]
     if (bestRate) {

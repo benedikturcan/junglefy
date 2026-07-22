@@ -103,7 +103,8 @@ export default defineEventHandler(async (event) => {
   if (data.country !== undefined) updateData.country = data.country
   if (data.region !== undefined) updateData.region = data.region
   if (data.appliesToAll !== undefined) updateData.applies_to_all = data.appliesToAll
-  if (data.productIds !== undefined) updateData.product_ids = data.productIds
+  if (data.productId !== undefined) updateData.product_id = data.productId
+  if (data.categoryId !== undefined) updateData.category_id = data.categoryId
   if (data.isActive !== undefined) updateData.is_active = data.isActive
   if (data.priority !== undefined) updateData.priority = data.priority
 

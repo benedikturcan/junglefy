@@ -1028,6 +1028,7 @@ export type Database = {
       tax_rates: {
         Row: {
           applies_to_all: boolean | null
+          category_id: string | null
           country: string | null
           created_at: string | null
           id: string
@@ -1035,6 +1036,7 @@ export type Database = {
           name: string
           organization_id: string
           priority: number | null
+          product_id: string | null
           product_ids: string[] | null
           rate_percent: number
           region: string | null
@@ -1042,6 +1044,7 @@ export type Database = {
         }
         Insert: {
           applies_to_all?: boolean | null
+          category_id?: string | null
           country?: string | null
           created_at?: string | null
           id?: string
@@ -1049,6 +1052,7 @@ export type Database = {
           name: string
           organization_id: string
           priority?: number | null
+          product_id?: string | null
           product_ids?: string[] | null
           rate_percent: number
           region?: string | null
@@ -1056,6 +1060,7 @@ export type Database = {
         }
         Update: {
           applies_to_all?: boolean | null
+          category_id?: string | null
           country?: string | null
           created_at?: string | null
           id?: string
@@ -1063,6 +1068,7 @@ export type Database = {
           name?: string
           organization_id?: string
           priority?: number | null
+          product_id?: string | null
           product_ids?: string[] | null
           rate_percent?: number
           region?: string | null
@@ -1070,10 +1076,24 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "tax_rates_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "tax_rates_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tax_rates_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]
