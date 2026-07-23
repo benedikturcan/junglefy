@@ -1,6 +1,6 @@
 import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
 import { UpdateIntegrationSchema } from '#server/types/integrations'
-import { encryptCredentials, maskCredentials } from '#server/utils/integrations'
+import { decryptCredentials, encryptCredentials, getIntegrationHandler, maskCredentials } from '#server/utils/integrations'
 import type { ApiKeyContext } from '#server/types/api-keys'
 
 defineRouteMeta({
@@ -96,6 +96,47 @@ export default defineEventHandler(async (event) => {
     }
 
     organizationId = (member as { organization_id: string }).organization_id
+  }
+
+  const { data: existing, error: existingError } = await client
+    .from('integrations')
+    .select('*')
+    .eq('id', id)
+    .eq('organization_id', organizationId)
+    .single()
+
+  if (existingError || !existing) {
+    throw createError({
+      statusCode: 404,
+      statusMessage: 'Not Found',
+      message: 'Integration not found.',
+    })
+  }
+
+  const existingRow = existing as Record<string, unknown>
+
+  const handler = getIntegrationHandler(existingRow.provider_code as string)
+  if (handler?.validateConfig) {
+    const mergedConfig = data.config !== undefined ? data.config : (existingRow.config as Record<string, unknown>)
+    let mergedCredentials: unknown
+    if (data.credentials !== undefined) {
+      mergedCredentials = data.credentials
+    } else if (existingRow.encrypted_credentials) {
+      try {
+        mergedCredentials = JSON.parse(decryptCredentials(existingRow.encrypted_credentials as string))
+      } catch {
+        mergedCredentials = undefined
+      }
+    }
+
+    const validation = handler.validateConfig(mergedConfig, mergedCredentials)
+    if (!validation.success) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: 'Bad Request',
+        message: validation.error || 'Invalid integration configuration',
+      })
+    }
   }
 
   const updateData: Record<string, unknown> = {}

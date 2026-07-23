@@ -1,6 +1,6 @@
 import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
 import { CreateIntegrationSchema } from '#server/types/integrations'
-import { encryptCredentials } from '#server/utils/integrations'
+import { encryptCredentials, getIntegrationHandler } from '#server/utils/integrations'
 import type { ApiKeyContext } from '#server/types/api-keys'
 
 defineRouteMeta({
@@ -93,6 +93,18 @@ export default defineEventHandler(async (event) => {
       statusMessage: 'Bad Request',
       message: 'Unknown or inactive integration provider.',
     })
+  }
+
+  const handler = getIntegrationHandler(data.providerCode)
+  if (handler?.validateConfig) {
+    const validation = handler.validateConfig(data.config, data.credentials)
+    if (!validation.success) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: 'Bad Request',
+        message: validation.error || 'Invalid integration configuration',
+      })
+    }
   }
 
   const encryptedCredentials = data.credentials

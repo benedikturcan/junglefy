@@ -34,7 +34,8 @@ export interface IntegrationEventContext {
 
 export interface IntegrationHandler {
   code: string
-  handleEvent(ctx: IntegrationEventContext): Promise<{ success: boolean; error?: string }>
+  validateConfig?(config: unknown, credentials: unknown): { success: boolean; error?: string }
+  handleEvent(ctx: IntegrationEventContext): Promise<{ success: boolean; error?: string; data?: unknown }>
 }
 
 const handlers = new Map<string, IntegrationHandler>()

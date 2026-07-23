@@ -199,6 +199,10 @@ export default defineEventHandler(async (event) => {
 
   return {
     success: true,
-    data: { invoked: true, job_id: (job as { id: string }).id },
+    data: {
+      invoked: true,
+      job_id: (job as { id: string }).id,
+      result: result.data,
+    },
   }
 })
