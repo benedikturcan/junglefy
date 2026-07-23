@@ -1,7 +1,7 @@
-import { serverSupabaseClient, serverSupabaseServiceRole, serverSupabaseUser } from '#supabase/server'
+import { serverSupabaseServiceRole } from '#supabase/server'
 import { InvokeIntegrationSchema } from '#server/types/integrations'
-import type { ApiKeyContext } from '#server/types/api-keys'
 import { getIntegrationHandler } from '#server/utils/integrations'
+import { requireOrganizationMember } from '#server/utils/auth-guards'
 import type { IntegrationEventContext, IntegrationRecord } from '#server/utils/integrations'
 
 defineRouteMeta({
@@ -30,16 +30,10 @@ defineRouteMeta({
 })
 
 export default defineEventHandler(async (event) => {
-  const apiKey = event.context.apiKey as ApiKeyContext | undefined
-  const user = await serverSupabaseUser(event)
-
-  if (!apiKey && !user) {
-    throw createError({
-      statusCode: 401,
-      statusMessage: 'Unauthorized',
-      message: 'Authentication required.',
-    })
-  }
+  const { client, organizationId } = await requireOrganizationMember(event, [
+    'organization_owner',
+    'location_owner',
+  ])
 
   const id = getRouterParam(event, 'id')
   if (!id) {
@@ -61,35 +55,6 @@ export default defineEventHandler(async (event) => {
   }
 
   const data = parse.data
-  const client = await serverSupabaseClient(event)
-  let organizationId: string
-
-  if (apiKey) {
-    if (!apiKey.permissions.includes('full_access')) {
-      throw createError({
-        statusCode: 403,
-        statusMessage: 'Forbidden',
-        message: 'Missing required permission: full_access',
-      })
-    }
-    organizationId = apiKey.organizationId
-  } else {
-    const { data: member, error: memberError } = await client
-      .from('organization_members')
-      .select('organization_id')
-      .eq('user_id', user!.id)
-      .single()
-
-    if (memberError || !member) {
-      throw createError({
-        statusCode: 403,
-        statusMessage: 'Forbidden',
-        message: 'Organization membership required.',
-      })
-    }
-
-    organizationId = (member as { organization_id: string }).organization_id
-  }
 
   const { data: integration, error } = await client
     .from('integrations')

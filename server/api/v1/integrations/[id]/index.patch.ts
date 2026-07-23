@@ -1,14 +1,13 @@
-import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
 import { UpdateIntegrationSchema } from '#server/types/integrations'
 import { decryptCredentials, encryptCredentials, getIntegrationHandler, maskCredentials } from '#server/utils/integrations'
-import type { ApiKeyContext } from '#server/types/api-keys'
+import { requireOrganizationOwner } from '#server/utils/auth-guards'
 
 defineRouteMeta({
   openAPI: {
     tags: ['Integrations'],
     summary: 'Update integration',
     description: 'Updates an integration configuration.',
-    security: [{ bearerAuth: [] }, { apiKey: [] }],
+    security: [{ bearerAuth: [] }],
     parameters: [
       {
         name: 'id',
@@ -28,16 +27,7 @@ defineRouteMeta({
 })
 
 export default defineEventHandler(async (event) => {
-  const apiKey = event.context.apiKey as ApiKeyContext | undefined
-  const user = await serverSupabaseUser(event)
-
-  if (!apiKey && !user) {
-    throw createError({
-      statusCode: 401,
-      statusMessage: 'Unauthorized',
-      message: 'Authentication required.',
-    })
-  }
+  const { client, organizationId } = await requireOrganizationOwner(event)
 
   const id = getRouterParam(event, 'id')
   if (!id) {
@@ -59,44 +49,6 @@ export default defineEventHandler(async (event) => {
   }
 
   const data = parse.data
-  const client = await serverSupabaseClient(event)
-  let organizationId: string
-
-  if (apiKey) {
-    if (!apiKey.permissions.includes('full_access')) {
-      throw createError({
-        statusCode: 403,
-        statusMessage: 'Forbidden',
-        message: 'Missing required permission: full_access',
-      })
-    }
-    organizationId = apiKey.organizationId
-  } else {
-    const { data: member, error: memberError } = await client
-      .from('organization_members')
-      .select('role, organization_id')
-      .eq('user_id', user!.id)
-      .single()
-
-    if (memberError || !member) {
-      throw createError({
-        statusCode: 403,
-        statusMessage: 'Forbidden',
-        message: 'Organization membership required.',
-      })
-    }
-
-    const role = (member as { role: string }).role
-    if (role !== 'organization_owner' && role !== 'location_owner') {
-      throw createError({
-        statusCode: 403,
-        statusMessage: 'Forbidden',
-        message: 'Insufficient permissions.',
-      })
-    }
-
-    organizationId = (member as { organization_id: string }).organization_id
-  }
 
   const { data: existing, error: existingError } = await client
     .from('integrations')
